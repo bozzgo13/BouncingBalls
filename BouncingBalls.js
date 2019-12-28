@@ -11,36 +11,9 @@ var timeFrame = 50;
 var fallingSped = 10;
 
 
-
-
-
-
-// Usual function
-function distance(p1,p2){
-	var dx = p2.position.x-p1.position.x;
-	var dy = p2.position.y-p1.position.y;
-	return Math.sqrt(dx*dx + dy*dy);
-}
-// Faster approximation
-function distanceApprox(p1,p2){
-	// Approximation by using octagons approach
-	var x = p2.x-p1.x;
-	var y = p2.y-p1.y;
-	return 1.426776695*Math.min(0.7071067812*(Math.abs(x)+Math.abs(y)), Math.max (Math.abs(x), Math.abs(y)));	
-}
-
 function fromDegreesToRadians (angle) {
   return angle * (Math.PI / 180);
 }
-
-function normalize(point, scale) {
-  var norm = Math.sqrt(point.direction.x * point.direction.x + point.direction.y * point.direction.y);
-  if (norm != 0) { // as3 return 0,0 for a point of zero length
-    point.direction.x = scale * point.direction.x / norm;
-    point.direction.y = scale * point.direction.y / norm;
-  }
-}
-
 
 function drawBg()
 {
@@ -94,15 +67,7 @@ function UpdateBalls() {
 		var el1 = ballsArray[i];
 		//1. Check if there is a collision
 		
-		//1.1. Check collision with canvas edge
-		if(el1.position.x > (canvas.width-radius) || el1.position.x < radius)
-		{
-			el1.direction.x *=-1;
-		}
-		if(el1.position.y > (canvas.height-radius) || el1.position.y < radius)
-		{
-			el1.direction.y *=-1;
-		}
+		
 			
 		//1.2. Check collision with other balls
 
@@ -135,16 +100,29 @@ function UpdateBalls() {
 		}
 
 	
+		//1.1. Check collision with canvas edge
+		if(el1.position.x > (canvas.width-radius) && el1.direction.x>0)// || el1.position.x < radius)
+		{
+			el1.direction.x *=-1;
+		}
+		if(el1.position.x < radius && el1.direction.x<0)
+		{
+			el1.direction.x *=-1;
+		}
+
+		if(el1.position.y > (canvas.height-radius) &&  el1.direction.y>0)
+		{
+			el1.direction.y *=-1;
+		}
+		if(el1.position.y < radius &&  el1.direction.y<0 ){el1.direction.y *=-1;}
+		
 		//2. Update positions
 		{
 			el1.position.y +=fallingSped * el1.direction.y;
 			el1.position.x +=fallingSped * el1.direction.x;
 			DrawBall(i, el1);			
 		}
-
-	}
-	
-		
+	}	
 }
 
 function resolveCollision(b1, b2) 
@@ -224,7 +202,7 @@ $(document).ready(function() {
 			
 			jQuery.each( ballsArray, function(index, el)
 			{
-				var dist = distance(el,newEl);
+				var dist = Vector.distance(el.position,newEl.position);
 			
 				if(dist < radiusX2)
 				{
@@ -241,12 +219,9 @@ $(document).ready(function() {
 		DrawBall(i,newEl);
 	}
 	
-
-
 	myTimer = setInterval(UpdateBalls, timeFrame);	
 	
 });
-
 
 
 $(document).keypress(function( event ) {
@@ -263,6 +238,5 @@ $(document).keypress(function( event ) {
 			myTimer = null;
 		}
   }
-
 
 });
