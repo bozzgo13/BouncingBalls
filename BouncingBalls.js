@@ -8,7 +8,7 @@ var myTimer = null;
 var canvas = null;
 var ctx = null; //context
 var timeFrame = 50;
-var fallingSped = 10;
+var fallingSped = 5;
 
 
 function fromDegreesToRadians (angle) {
@@ -61,15 +61,12 @@ function UpdateBalls() {
 	
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
-	drawBg();
+	//drawBg();
 	for (var i = 0; i < ballsArray.length; i++) 
 	{	
 		var el1 = ballsArray[i];
-		//1. Check if there is a collision
-		
-		
-			
-		//1.2. Check collision with other balls
+		//1. Check if there is a collision		
+		//1.1. Check collision with other balls
 
 		for (var j = i+1; j < ballsArray.length; j++) 
 		{
@@ -78,29 +75,34 @@ function UpdateBalls() {
 			{
 				//colision detected
 
-				
-				ctx.beginPath();
-				ctx.arc(el1.position.x, el1.position.y, radius, 0, 2 * Math.PI);
-				ctx.fillStyle = "blue";
-				ctx.fill();
-				
-				ctx.beginPath();
-				ctx.arc(el2.position.x, el2.position.y, radius, 0, 2 * Math.PI);
-				ctx.fillStyle = "red";
-				ctx.fill();
-				
-				ctx.beginPath();
-				ctx.moveTo(el2.position.x, el2.position.y);
-				ctx.lineTo(el2.position.x + (el2.direction.x*20), el2.position.y + (el2.direction.y*20));
-				ctx.stroke();
-				
-				resolveCollision(el1, el2);
-							
+				var dist = Vector.distance(el1.position,el2.position);
+			
+				if(dist <= radiusX2)
+				{
+					/*
+					ctx.beginPath();
+					ctx.arc(el1.position.x, el1.position.y, radius, 0, 2 * Math.PI);
+					ctx.fillStyle = "blue";
+					ctx.fill();
+					
+					ctx.beginPath();
+					ctx.arc(el2.position.x, el2.position.y, radius, 0, 2 * Math.PI);
+					ctx.fillStyle = "red";
+					ctx.fill();
+					
+					ctx.beginPath();
+					ctx.moveTo(el2.position.x, el2.position.y);
+					ctx.lineTo(el2.position.x + (el2.direction.x*20), el2.position.y + (el2.direction.y*20));
+					ctx.stroke();
+					*/
+					resolveCollision(el1, el2);
+				}
+								
 			}
 		}
 
 	
-		//1.1. Check collision with canvas edge
+		//1.2. Check collision with canvas edge
 		if(el1.position.x > (canvas.width-radius) && el1.direction.x>0)// || el1.position.x < radius)
 		{
 			el1.direction.x *=-1;
@@ -133,30 +135,29 @@ function resolveCollision(b1, b2)
     // minimum translation distance to push balls apart after intersecting
     var mtd = delta.multiply(((radius + radius)-d)/d); 
 
-
-    // resolve intersection --
-    // inverse mass quantities
     var im1 = 1; 
-    var im2 = 1;
 
-    // push-pull them apart based off their mass
-    b1.position = b1.position.add(mtd.multiply(im1 / (im1 + im2)));
-    b2.position = b2.position.subtract(mtd.multiply(im2 / (im1 + im2)));
+    b1.position = b1.position.add(mtd.multiply(im1));
+    b2.position = b2.position.subtract(mtd.multiply(im1));
 
-    // impact speed
-    var v = (b1.direction.subtract(b2.direction));
-    var vn = v.dot(mtd.normalize());
+	/*
+	ctx.beginPath();
+	ctx.arc(b1.position.x, b1.position.y, radius, 0, 2 * Math.PI);
+	ctx.fillStyle = "green";
+	ctx.fill();
 
-    // sphere intersecting but moving away from each other already
-    //if (vn > 0) return;
-
-    // collision impulse
-    //var i = (-(1) * vn) / (im1 + im2);
-    var impulse = mtd.normalize();//.multiply(i);
-
-    // change in momentum
-    b1.direction = b1.direction.add(impulse).normalize();
-    b2.direction = b2.direction.subtract(impulse).normalize();				
+	ctx.beginPath();
+	ctx.arc(b2.position.x, b2.position.y, radius, 0, 2 * Math.PI);
+	ctx.fillStyle = "#FF1493";
+	ctx.fill();	
+	*/
+	
+    var impulse = mtd.normalize();
+	var impulse_negative = Vector.negative(impulse);
+    
+	// change in momentum
+    b1.direction =  impulse;
+    b2.direction = impulse_negative;				
 }
 
 function DrawBall(i, el) 
@@ -166,16 +167,19 @@ function DrawBall(i, el)
 	ctx.stroke();
 
 	//for test: show direction
+	/*
 	ctx.beginPath();
 	ctx.moveTo(el.position.x, el.position.y);
 	ctx.lineTo(el.position.x + (el.direction.x*20), el.position.y + (el.direction.y*20));
 	ctx.stroke();
-
+	*/
 	//for test: show index
+	/*
 	ctx.font = "20px Comic Sans MS";
 	ctx.fillStyle = "red";
 	ctx.textAlign = "center";
 	ctx.fillText(i, el.position.x, el.position.y+radius);
+	*/
 }
 
 $(document).ready(function() {
@@ -197,7 +201,7 @@ $(document).ready(function() {
 			locationOk = true;
 			var x = (Math.random() * (400-radiusX2))+radius;
 			var y = (Math.random() * (400-radiusX2))+radius;
-			
+				
 			newEl = {position:new Vector(x,y), direction:new Vector(directionX,directionY)};
 			
 			jQuery.each( ballsArray, function(index, el)
