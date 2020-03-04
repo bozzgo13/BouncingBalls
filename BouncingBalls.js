@@ -7,9 +7,16 @@ var newEl = null;
 var myTimer = null;
 var canvas = null;
 var ctx = null; //context
-var timeFrame = 50;
-var fallingSped = 5;
+var timeFrame = 8;
+var fallingSped = 1;
+var newShape =[];
 
+const states = {
+    IDLE: 'idle',
+    DRAW: 'drawing'
+}
+
+var myState = null;
 
 function fromDegreesToRadians (angle) {
   return angle * (Math.PI / 180);
@@ -57,45 +64,121 @@ function drawBg()
 		
 }
 
+function drawShapes()
+{
+	
+	if(myState == states.DRAW)
+	{
+		ctx.strokeStyle = 'red';
+	}
+	else
+	{
+		ctx.fillStyle = "blue";
+	}
+	
+	
+	ctx.beginPath();
+	
+	if(newShape.length >=2)
+	{
+		ctx.moveTo(newShape[0].x, newShape[0].y);		
+	}
+	
+	for (var i = 1; i < newShape.length; i++) 
+	{
+		var point2 = newShape[i];
+		ctx.lineTo(point2.x, point2.y);
+		
+	}
+	
+/*
+	if(myState == states.IDLE)
+	{
+		//add the last line
+		//extra line that connects end end beginning
+		//is only meaningful if we have at least 3 points
+		if(newShape.length >=3)
+		{
+			var point2 = newShape[0];
+			ctx.lineTo(point2.x, point2.y);
+		}	
+	}
+*/
+	ctx.closePath();
+
+	
+	if(myState == states.DRAW)
+	{
+		ctx.stroke();
+	}
+	else
+	{
+		ctx.fill();
+	}
+
+	
+	
+	ctx.strokeStyle = 'black';
+}
 function UpdateBalls() {
 	
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
+	drawShapes();
+	
 	//drawBg();
 	for (var i = 0; i < ballsArray.length; i++) 
 	{	
-		var el1 = ballsArray[i];
+		var ball1 = ballsArray[i];
 		//1. Check if there is a collision		
 		//1.1. Check collision with other balls
 
+		var xball1 = {
+			position:new Vector(
+				ball1.position.x + (fallingSped * ball1.direction.x),
+				ball1.position.y +  (fallingSped * ball1.direction.y)), 
+			direction:new Vector(ball1.direction.x,ball1.direction.y)};
+
+
 		for (var j = i+1; j < ballsArray.length; j++) 
 		{
-			var el2 = ballsArray[j];
-			if((Math.abs(el2.position.x - el1.position.x)<radiusX2)&&(Math.abs(el2.position.y - el1.position.y)<radiusX2))
-			{
-				//colision detected
-
-				var dist = Vector.distance(el1.position,el2.position);
+			var ball2 = ballsArray[j];
+			//if going into same direction will result in colission
 			
+			var xball2 = {
+				position:new Vector(
+					ball2.position.x + (fallingSped * ball2.direction.x),
+					ball2.position.y +  (fallingSped * ball2.direction.y)), 
+				direction:new Vector(ball2.direction.x,ball2.direction.y)};
+
+			if((Math.abs(xball2.position.x - xball1.position.x)<=(radiusX2) && (Math.abs(xball2.position.y - xball1.position.y)<=(radiusX2))))
+			{
+
+				//colision detected
+				var dist = Vector.distance(ball1.position,ball2.position);
+				ball1.dirty=true;
+				ball2.dirty=true;
+	
+				resolveCollision(ball1, ball2, dist);
 				if(dist <= radiusX2)
 				{
 					/*
 					ctx.beginPath();
-					ctx.arc(el1.position.x, el1.position.y, radius, 0, 2 * Math.PI);
+					ctx.arc(ball1.position.x, ball1.position.y, radius, 0, 2 * Math.PI);
 					ctx.fillStyle = "blue";
 					ctx.fill();
 					
 					ctx.beginPath();
-					ctx.arc(el2.position.x, el2.position.y, radius, 0, 2 * Math.PI);
+					ctx.arc(ball2.position.x, ball2.position.y, radius, 0, 2 * Math.PI);
 					ctx.fillStyle = "red";
 					ctx.fill();
 					
 					ctx.beginPath();
-					ctx.moveTo(el2.position.x, el2.position.y);
-					ctx.lineTo(el2.position.x + (el2.direction.x*20), el2.position.y + (el2.direction.y*20));
+					ctx.moveTo(ball2.position.x, ball2.position.y);
+					ctx.lineTo(ball2.position.x + (ball2.direction.x*20), ball2.position.y + (ball2.direction.y*20));
 					ctx.stroke();
 					*/
-					resolveCollision(el1, el2);
+					
 				}
 								
 			}
@@ -103,31 +186,34 @@ function UpdateBalls() {
 
 	
 		//1.2. Check collision with canvas edge
-		if(el1.position.x > (canvas.width-radius) && el1.direction.x>0)// || el1.position.x < radius)
+		if(ball1.position.x > (canvas.width-radius) && ball1.direction.x>0)// || ball1.position.x < radius)
 		{
-			el1.direction.x *=-1;
+			ball1.direction.x *=-1;
 		}
-		if(el1.position.x < radius && el1.direction.x<0)
+		if(ball1.position.x < radius && ball1.direction.x<0)
 		{
-			el1.direction.x *=-1;
+			ball1.direction.x *=-1;
 		}
 
-		if(el1.position.y > (canvas.height-radius) &&  el1.direction.y>0)
+		if(ball1.position.y > (canvas.height-radius) &&  ball1.direction.y>0)
 		{
-			el1.direction.y *=-1;
+			ball1.direction.y *=-1;
 		}
-		if(el1.position.y < radius &&  el1.direction.y<0 ){el1.direction.y *=-1;}
+		if(ball1.position.y < radius &&  ball1.direction.y<0 ){ball1.direction.y *=-1;}
 		
 		//2. Update positions
 		{
-			el1.position.y +=fallingSped * el1.direction.y;
-			el1.position.x +=fallingSped * el1.direction.x;
-			DrawBall(i, el1);			
+
+			ball1.position.y +=fallingSped * ball1.direction.y;
+			ball1.position.x +=fallingSped * ball1.direction.x;
+			DrawBall(i, ball1,'black');				
 		}
+
+		
 	}	
 }
 
-function resolveCollision(b1, b2) 
+function resolveCollision(b1, b2, dist) 
 {
 	
 	var delta = Vector.subtract( b1.position, b2.position);;
@@ -136,9 +222,6 @@ function resolveCollision(b1, b2)
     var mtd = delta.multiply(((radius + radius)-d)/d); 
 
     var im1 = 1; 
-
-    b1.position = b1.position.add(mtd.multiply(im1));
-    b2.position = b2.position.subtract(mtd.multiply(im1));
 
 	/*
 	ctx.beginPath();
@@ -156,14 +239,15 @@ function resolveCollision(b1, b2)
 	var impulse_negative = Vector.negative(impulse);
     
 	// change in momentum
-    b1.direction =  impulse;
-    b2.direction = impulse_negative;				
+    b2.direction =  impulse;
+    b1.direction = impulse_negative;				
 }
 
-function DrawBall(i, el) 
+function DrawBall(i, el, color) 
 {
 	ctx.beginPath();
 	ctx.arc(el.position.x, el.position.y, radius, 0, 2 * Math.PI);
+	ctx.strokeStyle = color;
 	ctx.stroke();
 
 	//for test: show direction
@@ -182,11 +266,49 @@ function DrawBall(i, el)
 	*/
 }
 
+function startDrawingShape()
+{
+	var drawButton = $("#drawbutton");
+	if(myState == states.IDLE)
+	{
+		$( this ).html('Stop drawing');
+		newShape =[];
+		myState = states.DRAW;
+	}
+	else if(myState == states.DRAW)
+	{
+		$( this ).html('Start drawing');
+		myState = states.IDLE	
+	}
+	
+	
+
+
+}
+
+function onBordClick(e)
+{
+	//left mouse button click
+	if(e.which===1 && myState == states.DRAW)
+	{
+		addPoint(e.clientX, e.clientY);
+		
+		console.log("pos. ("+e.clientX+", "+e.clientY+")");
+	}	
+     
+}
+
+function addPoint(X,Y)
+{
+	newShape.push(new Vector(X-10,Y-10));
+}
+
+
 $(document).ready(function() {
-    console.log( "ready!" );
+    //console.log( "ready!" );
 	canvas = $("#bord").get(0);
 	ctx = canvas.getContext("2d");
-		
+	myState = states.IDLE;	
 	var i;
 	for (i = 0; i < numberOfBalls; ++i) 
 	{
@@ -202,7 +324,7 @@ $(document).ready(function() {
 			var x = (Math.random() * (400-radiusX2))+radius;
 			var y = (Math.random() * (400-radiusX2))+radius;
 				
-			newEl = {position:new Vector(x,y), direction:new Vector(directionX,directionY)};
+			newEl = {position:new Vector(x,y), direction:new Vector(directionX,directionY), dirty:false};
 			
 			jQuery.each( ballsArray, function(index, el)
 			{
@@ -220,10 +342,14 @@ $(document).ready(function() {
 
 		
 		ballsArray.push(newEl);		
-		DrawBall(i,newEl);
+		DrawBall(i,newEl,'black');
 	}
 	
 	myTimer = setInterval(UpdateBalls, timeFrame);	
+	
+	//on mouse key pressed
+	$("#bord").on("click", onBordClick);
+	$("#drawbutton").on("click", startDrawingShape);
 	
 });
 
