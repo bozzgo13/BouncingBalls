@@ -1,0 +1,143 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Convexity test</title>
+  <meta name="description" content="Is polygon clockwise oriented">
+  <meta name="author" content="Boštjan Tučič">
+	
+  <link rel="stylesheet" href="BouncingBalls.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+</head>
+
+<body>
+<canvas id="bord" class="bord" width="400" height="400">
+
+</canvas>
+
+<button type="button" id="drawbutton">Start drawing</button>
+<!-- https://math.stackexchange.com/questions/1743995/determine-whether-a-polygon-is-convex-based-on-its-vertices  -->
+  <script src="Vector.js"></script>
+  <script src="ComputerGeometry.js"></script>
+  <script type="text/javascript">
+//<![CDATA[
+
+var myTimer = null;
+var canvas = null;
+var ctx = null; //context
+var timeFrame = 8;
+var newShape =[];
+const states = {
+    IDLE: 'idle',
+    DRAW: 'drawing'
+}
+
+var myState = null;
+
+function drawShapes()
+{
+	
+	if(myState == states.DRAW)
+	{
+		ctx.strokeStyle = 'red';
+	}
+	else
+	{
+		ctx.fillStyle = "blue";
+	}
+	
+	
+	ctx.beginPath();
+	
+	if(newShape.length >=2)
+	{
+		ctx.moveTo(newShape[0].x, newShape[0].y);		
+	}
+	
+	for (var i = 1; i < newShape.length; i++) 
+	{
+		var point2 = newShape[i];
+		ctx.lineTo(point2.x, point2.y);
+		
+	}
+	
+	ctx.closePath();
+
+	
+	if(myState == states.DRAW)
+	{
+		ctx.stroke();
+	}
+	else
+	{
+		ctx.fill();
+	}
+
+	
+	
+	ctx.strokeStyle = 'black';
+}
+
+function UpdateCtx() {
+	
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	
+	drawShapes();
+}
+
+function startDrawingShape()
+{
+	var drawButton = $("#drawbutton");
+	if(myState == states.IDLE)
+	{
+		$( this ).html('Stop drawing');
+		newShape =[];
+		myState = states.DRAW;
+	}
+	else if(myState == states.DRAW)
+	{
+		$( this ).html('Start drawing');
+		myState = states.IDLE	
+	}
+	
+
+}
+
+function onBordClick(e)
+{
+	//left mouse button click
+	if(e.which===1 && myState == states.DRAW)
+	{
+		addPoint(e.clientX, e.clientY);
+		
+		if(newShape.length>2)
+			console.log("isclockwise: "+isclockwise(newShape));
+	}	
+     
+}
+function addPoint(X,Y)
+{
+	newShape.push(new Vector(X-10,Y-10));
+}
+
+
+$(document).ready(function() {
+    //console.log( "ready!" );
+	canvas = $("#bord").get(0);
+	ctx = canvas.getContext("2d");
+	myState = states.IDLE;
+	
+	myTimer = setInterval(UpdateCtx, timeFrame);	
+	
+	//on mouse key pressed
+	$("#bord").on("click", onBordClick);
+	$("#drawbutton").on("click", startDrawingShape);
+});
+
+//]]>
+</script>
+</body>
+</html>

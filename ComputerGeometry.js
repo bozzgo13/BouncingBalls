@@ -141,3 +141,15 @@ function isconvex(vertexlist)
     return true;
 
 }
+
+function isclockwise(vertices)
+{
+    var sum = 0.0;
+	var i = 0;
+    for (i = 0; i < vertices.length; i++) {
+        var v1 = vertices[i];
+        var v2 = vertices[(i + 1) % vertices.length];
+        sum += (v2.x - v1.x) * (v2.y + v1.y);
+    }
+    return sum > 0.0;
+}
